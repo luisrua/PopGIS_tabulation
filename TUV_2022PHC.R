@@ -57,7 +57,7 @@ for (variable in names(labels_list)) {
 labels_list
 
 # 2. HOUSING DATASET ==========================================================
-# Keep Private and Occuppied households
+# Keep Private and Occupied households
 hous1 <- hous %>% 
   filter(hh_type == 1 & occupancy == 1)
 
@@ -71,8 +71,8 @@ df <- hous1 %>%
   pivot_wider(names_from = lquarters, values_from = count, values_fill = list(count = 0)) %>% 
   mutate(tot_hh = rowSums(select(., -ea))) %>% 
   select(order(colnames(.))) %>% 
-  select(ea, tot_hh, everything()) # Exclude 'ea' column and select all other columns
-
+  select(ea, tot_hh, everything()) %>% # Exclude 'ea' column and select all other columns
+  rename(ea2022 = ea)
 # rename variables NEED TO CHANGE MANUALLY
 lab_var <- c("h_detach" , "h_attach" , "buil_app" , "buil_hh" , "att_shop")
 names(df)[c(-1,-2)] <- lab_var
@@ -88,7 +88,6 @@ totals
 
 # Export
 write_xlsx(df,paste0(tab,"h1_lquarter_22.xlsx"))
-
 
 # Table H2. Total Number of Private Households by Living Tenure ----
 df <- hous1 %>% 
@@ -648,7 +647,7 @@ df <- hous1 %>%
   select(ea, tot_hh, everything()) # Exclude 'ea' column and select all other columns
 
 # rename variables NEED TO CHANGE MANUALLY
-lab_var <- c("time" , "bins" , "cserv" , "dumploc" , "oth")
+lab_var <- c("timecol" , "bins" , "cserv" , "dumploc" , "oth")
 names(df)[c(-1,-2)] <- lab_var
 names(df)
 
@@ -2241,7 +2240,7 @@ totals <- df %>%
   summarise(across(everything(), \(x) sum(x, na.rm = TRUE)))
 totals
 
-write_xlsx(df,paste0(tab,"p19f_communicating_22.xlsx"))
+write_xlsx(df,paste0(tab,"p19f_comm_22.xlsx"))
 
 # Table 29. Resident Population by Sex by Ciguatera Food ----
 
@@ -3395,17 +3394,27 @@ totals
 
 write_xlsx(df,paste0(tab,"p59_consum_22.xlsx"))
 
-# 4. RENAME TAB NAMES ON EXCEL FILES
+# 4. RENAME TAB NAMES ON EXCEL FILES =========
 library(openxlsx)
 files <- list.files(path = tab, pattern = "\\.xlsx$", full.names= T)
 
-# loop the name change
+# loop to replace ea by ea2022
+for (file in files) {
+  data <- read.xlsx(file)
+  if("ea" %in% colnames(data)){
+    colnames(data)[colnames(data)=="ea"] <- "ea2022"
+    write.xlsx(data,file = file, overwrite = T)
+  }
+}
+
+# loop the sheetname change
 for (file in files) {
   wb <- loadWorkbook(file)
   sheets(wb)
-  new_sn <- "eaid2022"
+  new_sn <- "ea2022"
   names(wb)[1] <- new_sn
   
   saveWorkbook(wb,file,overwrite =  T)
   rm(wb)
 }
+
