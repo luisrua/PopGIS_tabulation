@@ -424,7 +424,7 @@ totals <- df %>%
 totals
 
 # Export
-write_xlsx(df,paste0(tab,"h13a_watersuff_22.xlsx"))
+write_xlsx(df,paste0(tab,"h13a_watershort_22.xlsx"))
 
 # Table H15. Total Number of Private Households by Main Water Source for Cooking and Handwashing ----
 
