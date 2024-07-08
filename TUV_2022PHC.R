@@ -8,12 +8,12 @@ source("setup.R")
 getwd()
 # Raw data directory
 dd <- "C:/Users/luisr/SPC/SDD GIS - Documents/PopGIS/PopGIS3/Data/Tuvalu/2022dataset/"
-tab <- "C:/Users/luisr/SPC/SDD GIS - Documents/PopGIS/PopGIS3/Data/Tuvalu/2022dataset/popgis_tables/"
+tab <- "C:/Users/luisr/SPC/SDD GIS - Documents/PopGIS/PopGIS3/Data/Tuvalu/2022dataset/popgis_tables_corrected/"
 
 # 1.IMPORT AND PREPARE CENSUS DATASETS ========================================
 # 1.1 Import Stata databases ----
 
-stata_files <- list.files (paste0(paste0(dd,"Stata")),
+stata_files <- list.files (paste0(dd,"StataV2"),
                            pattern = "*.dta", full.names = T)
 stata_files
 
@@ -82,7 +82,7 @@ names(df)
 ifelse(nrow(df) == 77, "nrow ok","NROW NOT OK!!") 
 ifelse(sum(is.na(df)) == 0, "nas ok", "NAS WRONG!!")
 totals <- df %>%
-  select(-ea) %>%  # Exclude the 'id' column if it's not numeric and not needed
+  select(-ea2022) %>%  # Exclude the 'id' column if it's not numeric and not needed
   summarise(across(everything(), \(x) sum(x, na.rm = TRUE)))
 totals
 
@@ -126,7 +126,7 @@ df <- hous1 %>%
   select(ea, tot_hh, everything()) # Exclude 'ea' column and select all other columns
 
 # rename variables NEED TO CHANGE MANUALLY
-lab_var <- c("gov" , "kaup" , "coop_pp" , "priv_ind" , "org" , "oth" , "ns")
+lab_var <- c("gov" , "kaup" , "coop_pp" , "priv_ind" , "org" )
 names(df)[c(-1,-2)] <- lab_var
 names(df)
 
@@ -1319,9 +1319,20 @@ write_xlsx(df,paste0(tab,"h41a_wtanknum_22.xlsx"))
 
 
 # 3. POPULATION DATASET ==========================================================
-# Keep Private and Occuppied households
+
+# Create 5 years age groups
+pop <- pop %>%
+  mutate(age_grp5 = cut(age, 
+                        breaks = seq(0, 95, by = 5), 
+                        right = FALSE, ,
+                        labels = c('0',	'5',	'10',	'15',	'20',	'25',	'30',	'35',	'40',
+                                   '45',	'50',	'55',	'60',	'65',	'70',	'75','80', '85', '90')
+                        ))
+table(pop$age_grp5)
+
+# Keep Private households
 pop1 <- pop %>% 
-  filter(hh_type == 1 & occupancy == 1)
+  filter(hh_type == 1)
 get_catlab(pop$hh_type)
 get_catlab(pop1$hh_type)
 
@@ -1347,6 +1358,8 @@ for (variable in names(labels_list)) {
   }
 }
 labels_list
+
+
 # Table P3a. Table 3. Total Population by 5-Year Age Group De-jure ----
 # Total
 dft <- pop %>% 
@@ -1471,16 +1484,15 @@ totals
 
 write_xlsx(df,paste0(tab,"p3b_5ag_df_22.xlsx"))
 
-# Table 4. Resident Population by 5-Year Age Group by Sex ----
+# Table 4. Resident Population de Facto by 5-Year Age Group by Sex ----
 
-# Trick as the residency question has NAs so we include them in cat1
+# filter residents for the rest of the tabulations
 popr <- pop %>%
-  mutate(usual_residence = ifelse(is.na(usual_residence), 1, usual_residence)) %>% 
-  filter(de_facto_count ==1, usual_residence != 4)
+  filter( df_resident == 1)
 
-table(popr$usual_residence)  
+table(popr$df_resident)  
 table(popr$de_facto_count)
-sum(popr$usual_residence, na.rm = T)
+sum(popr$df_resident, na.rm = T)
 
 # Total
 dft <- popr %>% 
